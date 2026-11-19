@@ -1,13 +1,13 @@
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE, username } from "@/lib/auth";
+import { auth, boardName } from "@/lib/auth";
 import { boardUrl } from "@/lib/board";
 
 export const dynamic = "force-dynamic";
 
 export default async function Setup() {
-  const me = await username((await cookies()).get(SESSION_COOKIE)?.value);
-  if (!me) redirect("/api/auth/authorize?next=/setup");
+  const me = boardName((await auth())?.user?.email);
+  if (!me) redirect("/signin?next=/setup");
 
   const steps = [
     ["Install Vercel CLI 66 or later (needs Node 22.18 or later)", "npm i -g vercel@latest && vercel --version"],

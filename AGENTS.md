@@ -18,8 +18,9 @@ is the setup guide for someone deploying their own.
 | --- | --- |
 | `app/board/[[...path]]/route.ts` | Mounts `@vercel/board/inspect` at `/board`. Requires a Google session; forces `x-board-profile` to the user's name on every request |
 | `lib/page.ts` | `boardPage()`: rewrites the inspector HTML (name prompt off) and, until the `board_setup` cookie is set, adds a one-line setup bar above the app with links to `/setup` and `/setup/done` |
-| `lib/auth.ts` | Google ID token verification (JWKS, `iss`, `aud`) and the code-for-token exchange. Name = email local part |
-| `app/api/auth/authorize/route.ts`, `app/api/auth/callback/route.ts` | Google OAuth code flow with `state` and `nonce` in a short-lived `board_oauth` cookie. The session is the ID token in `board_id`, expiring with the token (about 1 hour) |
+| `lib/auth.ts` | Auth.js (`next-auth`) with the Google provider and a 30-day JWT session cookie. `signIn` refuses unverified emails and, when `ALLOWED_DOMAINS` is set, other domains. `boardName()` is the email local part |
+| `proxy.ts` | Gates `/`, `/board` and `/setup`: signed-out pages go to `/signin`, signed-out API calls get 401. Running `auth()` here is also what renews the session cookie on every request, so an active user never signs in again |
+| `app/signin/route.ts`, `app/api/auth/[...nextauth]/route.ts` | `/signin?next=` starts Google sign-in directly; the second mounts Auth.js's own routes |
 | `app/page.tsx` | `/` redirects to `/board`: the board is the landing page |
 | `app/setup/page.tsx`, `app/setup/done/route.ts` | Agent setup steps at `/setup`. `/setup/done` sets the `board_setup` cookie and returns to the board |
 | `lib/board.ts` | The `board()` handle: in a deployment it acts as the Vercel project (OIDC). Carries the GitHub sync when `GITHUB_APP_ID` is set: every repository the app sees lands in the channel `github/<repo>`, except `GITHUB_EXCLUDED_REPOS`. `boardUrl()` asks the board for its own URL |
@@ -33,8 +34,9 @@ Environment variables on the Vercel project, Production. There is no other confi
 
 | Name | Required | Meaning |
 | --- | --- | --- |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth web client. Its redirect URI is `https://<domain>/api/auth/callback` |
-| `GOOGLE_ALLOWED_DOMAIN` | No | Only accounts of this Google Workspace domain may sign in (checked against the token's `hd`). Needed unless the Google app is Internal |
+| `AUTH_SECRET` | Yes | Signs the session cookie. Any long random value (`npx auth secret`) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth web client. Its redirect URI is `https://<domain>/api/auth/callback/google` |
+| `ALLOWED_DOMAINS` | No | Comma-separated email domains that may sign in. Needed unless the Google app is Internal |
 | `GITHUB_APP_ID` | No | Turns the GitHub mirror on. With it set, the build fails unless the next three are set too, so a half-configured deploy never goes live |
 | `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET` | With the mirror | Read by `createGitHubAdapter()` |
 | `GITHUB_BOT_USER_ID` | No | The app's bot user. Without it the adapter logs a 403 from `GET /user` on each cold start |
@@ -45,7 +47,7 @@ Never set `BOARD_URL` on the deployment: the handle then treats the board as one
 
 ## Invariants
 
-- Access control is Google's: the Google app must be Internal, or `GOOGLE_ALLOWED_DOMAIN` must be set. Without
+- Access control is Google's: the Google app must be Internal, or `ALLOWED_DOMAINS` must be set. Without
   either, anyone with a Google account can sign in.
 - Web writes go out under the signed-in person's email local part. Never trust a name from the client.
 - The inspector page's CSP forbids inline scripts. Change page behaviour through its `<meta name="inspect-*">`

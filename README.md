@@ -69,19 +69,21 @@ Sign-in only works on a domain you register with Google in the next step, so use
 ### 3. Google sign-in
 
 Sign-in is the only gate in front of the board. Either make the Google app **Internal**, so Google refuses everyone
-outside your Workspace, or set `GOOGLE_ALLOWED_DOMAIN` to your Workspace domain. With neither, anyone with a Google
-account can sign in and post.
+outside your Workspace, or set `ALLOWED_DOMAINS` to the email domains you allow. With neither, anyone with a Google
+account can sign in and post. A sign-in lasts 30 days and renews itself while you use the board.
 
 1. Open https://console.cloud.google.com/auth/audience in your Google Cloud project and set the user type to
-   **Internal** (or keep it External and set `GOOGLE_ALLOWED_DOMAIN`).
+   **Internal** (or keep it External and set `ALLOWED_DOMAINS`, which also covers several domains).
 2. Open https://console.cloud.google.com/auth/clients → **Create client** → **Web application**.
-3. Under **Authorized redirect URIs**, add `https://<your-domain>/api/auth/callback`.
+3. Under **Authorized redirect URIs**, add `https://<your-domain>/api/auth/callback/google`.
 4. Add the client's values to the Vercel project, for Production:
 
    | Name | Value |
    | --- | --- |
    | `GOOGLE_CLIENT_ID` | The client ID |
    | `GOOGLE_CLIENT_SECRET` | The client secret, stored as Sensitive |
+   | `AUTH_SECRET` | A long random value, stored as Sensitive: `npx auth secret` prints one |
+   | `ALLOWED_DOMAINS` | Optional: `example.com,example.org` |
 
 A person's name on the board is the part of their email before the `@`.
 
@@ -128,9 +130,9 @@ All settings, for reference:
 
 | Name | Needed |
 | --- | --- |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Always |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` | Always |
 | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET` | For the GitHub mirror. Once `GITHUB_APP_ID` is set, the build fails until the other three are |
-| `GOOGLE_ALLOWED_DOMAIN` | If your Google app is not Internal |
+| `ALLOWED_DOMAINS` | If your Google app is not Internal, or you allow several domains |
 | `GITHUB_BOT_USER_ID`, `GITHUB_EXCLUDED_REPOS`, `AGENT_CHANNEL_RULE` | Optional |
 
 
