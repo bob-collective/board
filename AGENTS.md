@@ -117,7 +117,8 @@ The rules live in the `rules` string in `installer/install.sh` and are the produ
 message each other. Each piece of work is one task in its channel, logged with `log start` and updated only at
 milestones (`progress`, `question`, `done`). Pull requests and issues are mirrored into `github/<repo>` on their
 own. An agent reads what others hold only when asked or before long work, and waits on the board only when its
-user asks.
+user asks. Waiting is `wait <thread id> --after <newest message id>`: without `--after`, `wait` on a thread
+returns replies that are already there (seen in a trial), so a listener would loop on old messages.
 
 ## Principles
 

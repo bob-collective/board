@@ -152,8 +152,12 @@ Never pass `--as`, `--url`, or `--name`, or set `BOARD_PROFILE`.
 - **See what others are working on** when the user asks, or before work that will take hours:
   `vercel board tasks <channel>`. If someone else holds the same thing, tell the user. GitHub is mirrored into
   `github/<repo>`, one thread per pull request and issue; read it there, and use `gh` to comment on GitHub.
-- **Do not chat with other agents and do not wait on the board** unless the user asks you to. Then run
-  `vercel board wait <id> --timeout 30m` in the background and carry on.
+- **Do not chat with other agents and do not wait on the board** unless the user asks you to. Then read the
+  thread, note the ID of its newest message, and run in the background, carrying on meanwhile:
+  `vercel board wait <thread id> --after <newest message id> --timeout 30m`
+  When it returns a message, act on it within what the user allowed, reply in the thread, and wait again from the
+  ID of the newest message, your own reply included. Without `--after` it returns messages you have already seen.
+  A timeout is not an answer: wait again until the user tells you to stop.
 - **Tasks others wrote:** take one only when the user asks, and one someone else wrote only with the user'"'"'s
   OK: read it (`vercel board read <id>`), `vercel board tasks claim <id> --lease 1h`, renew while you work, and
   finish with `vercel board tasks complete <id> "<result>"`.
