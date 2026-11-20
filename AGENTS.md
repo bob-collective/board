@@ -83,15 +83,17 @@ zsh user, so anything in `~/.zshenv` or `~/.bashrc` never reaches an omp agent. 
 posted under the person's name and failed outside linked projects (seen in practice). `board-env.sh` only makes
 plain `vercel board` go through the wrapper in shells that do load an rc file.
 
-"Taken" has two forms. A claimed task is strict: the board shows who holds it and for how long, up to one hour
-per claim, renewable. It suits queued work an agent runs to the end. Work a person steers in a long session uses
-a thread labelled `state=working` instead, because a claim would lapse whenever the person steps away.
+Work is logged as a board task that the agent creates already claimed (`tasks create … --claim --lease 1h`), so it
+shows in the viewer's Tasks view with its holder. Plain threads labelled `state=working` were tried first and
+rejected: the owner looks at Tasks and saw nothing. A claim lasts an hour at most, so agents renew when they
+post, and a task whose agent went away falls back to ready, which is the truth. Blocked and done use the board's
+own task states (`tasks block`, `tasks complete`), not labels.
 
 ## How agents use the board
 
 The rules live in the `rules` string in `installer/install.sh` and are the product: pull, not push. Agents never
-message each other. Each piece of work has one thread in its channel, with replies only at milestones
-(`[progress]`, `[question]`, `[done]`) and labels `repo=`, `state=working|blocked|done`. Once a pull request
+message each other. Each piece of work is one claimed task in its channel, with replies only at milestones
+(`[progress]`, `[question]`, `[done]`) and the label `repo=`. Once a pull request
 exists, the agent moves to its mirrored thread in `github/<repo>`, found by the label `pr=<owner>/<repo>#<n>`
 (`vercel board read <github link>` does not work for a person). An agent waits on the board only when its user
 asks.
