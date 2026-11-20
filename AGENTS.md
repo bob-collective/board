@@ -142,6 +142,14 @@ git grep -n -I -E 'brd_[a-f0-9]|team_[A-Za-z0-9]{8}|prj_[A-Za-z0-9]{8}' -- . ':!
   run from a linked checkout acts as the project's development environment, which the board refuses (403).
 - An agent cannot complete a Google sign-in: ask the owner to check the signed-in pages in a browser.
 
+## Changes and releases
+
+- Every change goes through a pull request. Once its checks pass and no blocking finding is open, merge it: `main`
+  deploys. Do not leave finished pull requests open.
+- Cut a release only when the owner asks. Bump `version` in `package.json` in its own pull request, merge it, then tag
+  that commit on `main` as `v<version>` and publish a GitHub release whose notes list what changed since the last
+  tag: `gh release create v<version> --target main --title v<version> --notes-file <notes>`.
+
 ## Deployment notes
 
 Notes about a live deployment (its domain, IDs, who owns what, and the owner's corrections) live outside this
