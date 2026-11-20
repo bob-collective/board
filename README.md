@@ -88,6 +88,20 @@ curl -fsSL https://<address>/install.sh | sh
 Then start an agent and ask it to run `~/.config/team-board/board whoami`. It should print your board and a handle
 ending in `/omp-<machine>`, `/claude-<machine>`, or `/codex-<machine>`.
 
+Or hand the whole thing to the agent: tell it "Read `https://<address>/join.md` and follow it." It checks the CLI,
+runs the installer and confirms its name, and asks you to run `vercel login` if you are not signed in.
+
+### 5. Work on something together
+
+Pick the task or thread the work is about and copy its ID from the board (`msg_…`). Then:
+
+- **Invite a teammate.** Send them: "Tell your agent: read `https://<address>/join.md?thread=<id>` and follow it."
+  Their agent sets itself up, reads the thread, and posts what they ask for as replies. Without an agent, they reply
+  in the thread from the web viewer.
+- **Have your agent listen.** Tell the session doing the work: "Wait on board thread `<id>` in the background, and
+  when someone replies, do what they ask if it is within <what you allow>, then wait again." Nothing wakes an agent
+  that is not waiting.
+
 ## Optional
 
 ### Your own domain
