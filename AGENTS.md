@@ -65,9 +65,9 @@ Never set `BOARD_URL` on the deployment: the handle then treats the board as one
 
 ## Installer
 
-Writes `~/.config/team-board/board` (the wrapper), `board-env.sh`, marked `# >>> team-board >>>` blocks in `~/.zshenv`, `~/.bashrc`,
-`~/.omp/agent/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and installs the `vercel/board` skill for
-Claude Code, Codex, and omp. Safe to rerun.
+Writes `~/.config/team-board/board` (the wrapper), `log`, `board-env.sh`, marked `# >>> team-board >>>` blocks in
+`~/.zshenv`, `~/.bashrc`, `~/.omp/agent/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, a prompt hook for
+each harness (below), and installs the `vercel/board` skill for Claude Code, Codex, and omp. Safe to rerun.
 
 Agent names: `<agent>-<machine>` under the person's Vercel handle. One person's parallel sessions share a name
 and are told apart by their threads. The board does not cap names per login: Vercel's swarm template said 20 on
@@ -85,20 +85,38 @@ zsh user, so anything in `~/.zshenv` or `~/.bashrc` never reaches an omp agent. 
 posted under the person's name and failed outside linked projects (seen in practice). `board-env.sh` only makes
 plain `vercel board` go through the wrapper in shells that do load an rc file.
 
-Work is logged as a board task that the agent creates already claimed (`tasks create … --claim --lease 1h`), so it
-shows in the viewer's Tasks view with its holder. Plain threads labelled `state=working` were tried first and
-rejected: the owner looks at Tasks and saw nothing. A claim lasts an hour at most, so agents renew when they
-post, and a task whose agent went away falls back to ready, which is the truth. Blocked and done use the board's
-own task states (`tasks block`, `tasks complete`), not labels.
+Work is logged as a board task the agent holds, so it shows in the viewer's Tasks view. Plain threads labelled
+`state=working` were tried first and rejected: the owner looks at Tasks and saw nothing.
+
+`~/.config/team-board/log` is how agents log, and it must never slow them down: every call forks the board
+commands into the background and returns in under 0.1 s (measured; a board command itself takes 1 to 2 s). It
+keeps one task per agent session in `~/.config/team-board/tasks/<session id>` (task ID, then its text), and a lock
+directory beside it keeps one session's calls in order. `start <channel> <text>` closes the session's previous
+task and creates a claimed one; `progress` and `question` reply (a question also blocks the task for a person);
+`done` completes it; `remind` prints the reminder and renews the claim. Claims last an hour, so the renewal on
+every user prompt is what keeps a task held; one left alone falls back to ready, which is the truth.
+
+Written rules alone were not enough: in a trial omp knew the rule and skipped it. So each harness runs
+`log remind` on every user prompt and adds its output to the context: omp through the extension
+`~/.omp/agent/extensions/team-board.ts` (`before_agent_start`), Claude Code and Codex through a
+`UserPromptSubmit` hook in `~/.claude/settings.json` and `~/.codex/hooks.json`. Vercel shipped and later removed
+a turn-end reminder hook of its own (0.21, reason not public): keep ours to one short line and no blocking.
+
+`log` starts its background half in a new session (`perl … setsid`), because Codex kills a command's process
+group when the command ends, even without a sandbox. Verified by a trial job with no mention of the board: omp
+and Claude Code logged and completed a task on their own, and Codex did with its sandbox off. Inside Codex's
+sandbox nothing works: `~/.config` is read-only and the network is closed, so neither the state file, the CLI's
+claim store (`~/.config/board/claims`) nor the board is reachable. Opening that is the owner's decision
+(`sandbox_workspace_write.writable_roots` and `network_access` in `~/.codex/config.toml`); the installer does
+not touch it.
 
 ## How agents use the board
 
 The rules live in the `rules` string in `installer/install.sh` and are the product: pull, not push. Agents never
-message each other. Each piece of work is one claimed task in its channel, with replies only at milestones
-(`[progress]`, `[question]`, `[done]`) and the label `repo=`. Once a pull request
-exists, the agent moves to its mirrored thread in `github/<repo>`, found by the label `pr=<owner>/<repo>#<n>`
-(`vercel board read <github link>` does not work for a person). An agent waits on the board only when its user
-asks.
+message each other. Each piece of work is one task in its channel, logged with `log start` and updated only at
+milestones (`progress`, `question`, `done`). Pull requests and issues are mirrored into `github/<repo>` on their
+own. An agent reads what others hold only when asked or before long work, and waits on the board only when its
+user asks.
 
 ## Principles
 
