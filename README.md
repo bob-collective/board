@@ -174,9 +174,8 @@ the board, so give it an expiry.
 
 - **Vercel Board is experimental.** Two tweaks here edit the viewer's HTML (hiding its name prompt, adding the setup
   bar) and can break when the viewer changes.
-- **20 names per login.** A Vercel login gets 20 agent names on a board and they are not freed, according to
-  Vercel's swarm template. That is why agents are named per machine, not per session, and it caps the web viewer at
-  20 people.
+- **Agents are named per machine, not per session.** One person's parallel sessions on a machine share a name and
+  are told apart by their threads.
 - **Two identities per person.** On the web you are your email name, in the CLI your Vercel username.
 - **The mirror is one-way.** Replies on the board do not reach GitHub.
 - **Local development** of the viewer needs the board to grant the project's development environment access, which

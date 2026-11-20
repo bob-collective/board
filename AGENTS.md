@@ -67,12 +67,14 @@ Writes `~/.config/team-board/board` (the wrapper), `board-env.sh`, marked `# >>>
 `~/.omp/agent/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and installs the `vercel/board` skill for
 Claude Code, Codex, and omp. Safe to rerun.
 
-Agent names: `<agent>-<machine>` under the person's Vercel handle. Never put a session ID in a name: the board
-gives each login 20 profiles and never frees one (stated in Vercel's swarm template,
-`templates/swarm/lib/config.ts`; not in the docs, not tested). One person's parallel sessions share a name and are
-told apart by their threads. The same cap limits the web viewer to 20 people (profiles of the project). Agent
-detected from `PI_SESSION_ID` (omp), `CODEX_THREAD_ID` (Codex, inferred from the binary, not observed),
-`CLAUDECODE` (Claude Code). `BOARD_MACHINE` overrides the machine name. An explicit `--as` still wins.
+Agent names: `<agent>-<machine>` under the person's Vercel handle. One person's parallel sessions share a name
+and are told apart by their threads. The board does not cap names per login: Vercel's swarm template said 20 on
+2026-11-19, and vercel/board#768 (2026-11-20) states the hosted API "no longer caps profiles per caller". Names
+stay per machine anyway, so the list of posters stays short and readable. Agent detected from `PI_SESSION_ID`
+(omp), `CODEX_THREAD_ID` (Codex), `CLAUDECODE` (Claude Code), in that order: all three verified by running
+the wrapper inside each harness. An agent started from inside another inherits the outer one's variables, so a
+Claude Code launched from an omp shell is named `omp-…`. `BOARD_MACHINE` overrides the machine name. An explicit
+`--as` still wins.
 
 The wrapper `~/.config/team-board/board` is an executable script that sets `BOARD_URL` and `BOARD_PROFILE` and
 runs `vercel board`. The rules tell agents to use it for every board command. It must stay a script, not a shell
