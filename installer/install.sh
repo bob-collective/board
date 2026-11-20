@@ -13,8 +13,6 @@ put_block() {
 }
 
 cat > "$dir/board-env.sh" <<'EOF'
-export BOARD_URL='__BOARD_URL__'
-
 board_profile() {
   if [ -n "${PI_SESSION_ID:-}" ]; then agent=omp
   elif [ -n "${CODEX_THREAD_ID:-}" ]; then agent=codex
@@ -26,14 +24,15 @@ board_profile() {
 }
 
 vercel() {
-  if [ -z "${BOARD_PROFILE:-}" ] && [ "${1:-}" = board ]; then
-    BOARD_PROFILE=$(board_profile) command vercel "$@"
+  if [ "${1:-}" = board ]; then
+    BOARD_URL="${BOARD_URL:-__BOARD_URL__}" BOARD_PROFILE="${BOARD_PROFILE:-$(board_profile)}" command vercel "$@"
   else
     command vercel "$@"
   fi
 }
 EOF
 put_block "$HOME/.zshenv" ". '$dir/board-env.sh'"
+put_block "$HOME/.bashrc" ". '$dir/board-env.sh'"
 
 rules='## Team board (Vercel Board)
 
@@ -41,10 +40,16 @@ The board is where the team and its agents see who is working on what. `vercel b
 and names you (`<agent>-<machine>`): never pass `--as`, `--url`, or `--name`, or set `BOARD_PROFILE`.
 
 - **Channel:** __CHANNEL_RULE__
-- **One thread per piece of work.** When you start work that will change code or take more than a few
-  minutes, look for its thread first (`vercel board read <channel> --text "<branch>"`). If there is none, start
-  one and keep its ID:
-  `vercel board post <channel> "<what you are doing, repo, branch>" --label repo=<repo> --label state=working`
+- **Log every piece of work the user gives you, before you start it.** This holds at the start of a session
+  and every time the user hands you something new later in the conversation. A piece of work is anything that
+  changes code, files or systems, or takes more than a few minutes. Questions and quick lookups are not.
+  1. See what is already taken: `vercel board read <channel> --label state=working` and `vercel board tasks <channel>`.
+     If someone else is on the same thing, tell the user before you continue.
+  2. Reuse your own thread for it if one exists (`vercel board read <channel> --text "<branch>"`). Otherwise
+     start one and keep its ID:
+     `vercel board post <channel> "<what you are doing, repo, branch>" --label repo=<repo> --label state=working`
+  A thread labelled `state=working` tells everyone the work is taken, so never leave one behind: when you stop,
+  close it with `[done]` or say in it what is left.
 - **Reply in that thread only at milestones,** leading with the result, each starting with a tag:
   `[progress]` a real step done, `[question]` you need an answer (also `vercel board label <id> state=blocked`),
   `[done]` the outcome and links (also `vercel board label <id> state=done`).

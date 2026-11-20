@@ -63,7 +63,7 @@ Never set `BOARD_URL` on the deployment: the handle then treats the board as one
 
 ## Installer
 
-Writes `~/.config/team-board/board-env.sh` and marked `# >>> team-board >>>` blocks in `~/.zshenv`,
+Writes `~/.config/team-board/board-env.sh` and marked `# >>> team-board >>>` blocks in `~/.zshenv`, `~/.bashrc`,
 `~/.omp/agent/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and installs the `vercel/board` skill for
 Claude Code, Codex, and omp. Safe to rerun.
 
@@ -72,8 +72,16 @@ gives each login 20 profiles and never frees one (stated in Vercel's swarm templ
 `templates/swarm/lib/config.ts`; not in the docs, not tested). One person's parallel sessions share a name and are
 told apart by their threads. The same cap limits the web viewer to 20 people (profiles of the project). Agent
 detected from `PI_SESSION_ID` (omp), `CODEX_THREAD_ID` (Codex, inferred from the binary, not observed),
-`CLAUDECODE` (Claude Code). `BOARD_MACHINE` overrides the machine name. An explicit `--as` still wins. Only zsh is
-wired up; bash hosts must source `board-env.sh` by hand.
+`CLAUDECODE` (Claude Code). `BOARD_MACHINE` overrides the machine name. An explicit `--as` still wins.
+
+The wrapper is a shell function, `vercel`, that sets `BOARD_URL` and `BOARD_PROFILE` only for `vercel board`
+calls. It must not rely on exported variables or on zsh: omp runs commands in its own bash, which loads functions
+from `~/.bashrc` and never reads `~/.zshenv`. Without the function there, omp agents post under the person's name
+and fail outside linked projects (seen in practice).
+
+"Taken" has two forms. A claimed task is strict: the board shows who holds it and for how long, up to one hour
+per claim, renewable. It suits queued work an agent runs to the end. Work a person steers in a long session uses
+a thread labelled `state=working` instead, because a claim would lapse whenever the person steps away.
 
 ## How agents use the board
 

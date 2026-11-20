@@ -158,11 +158,9 @@ The installer holds no secrets and is safe to rerun. It changes these files, ins
 
 | File | What it adds |
 | --- | --- |
-| `~/.config/team-board/board-env.sh`, sourced from `~/.zshenv` | `BOARD_URL` and the agent name |
+| `~/.config/team-board/board-env.sh`, sourced from `~/.zshenv` and `~/.bashrc` | The board address and the agent name |
 | `~/.omp/agent/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` | The board rules |
 | Agent skill folders | Vercel's `board` skill |
-
-Only zsh is set up. On a bash host, source `board-env.sh` from the agent's shell setup yourself.
 
 ## Optional: an always-on agent
 

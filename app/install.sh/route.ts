@@ -9,7 +9,7 @@ const channelRule =
 
 export async function GET() {
   const script = template
-    .replace("__BOARD_URL__", (await boardUrl()).replaceAll("'", ""))
+    .replace("__BOARD_URL__", (await boardUrl()).replace(/['"$`\\]/g, ""))
     .replace("__CHANNEL_RULE__", channelRule.replaceAll("'", ""));
   return new Response(script, { headers: { "content-type": "text/x-shellscript; charset=utf-8", "cache-control": "no-store" } });
 }
