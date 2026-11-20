@@ -34,7 +34,7 @@ Environment variables on the Vercel project, Production. There is no other confi
 
 | Name | Required | Meaning |
 | --- | --- | --- |
-| `AUTH_SECRET` | Yes | Signs the session cookie. Any long random value (`npx auth secret`) |
+| `AUTH_SECRET` | Yes | Signs the session cookie. Any long random value (`openssl rand -base64 32`) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth web client. Its redirect URI is `https://<domain>/api/auth/callback/google` |
 | `ALLOWED_DOMAINS` | No | Comma-separated email domains that may sign in. Needed unless the Google app is Internal |
 | `GITHUB_APP_ID` | No | Turns the GitHub mirror on. With it set, the build fails unless the next three are set too, so a half-configured deploy never goes live |

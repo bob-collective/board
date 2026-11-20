@@ -1,4 +1,4 @@
-export const metadata = { title: "Distributed Crafts board" };
+export const metadata = { title: "Board" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
