@@ -26,6 +26,7 @@ is the setup guide for someone deploying their own.
 | `lib/board.ts` | The `board()` handle: in a deployment it acts as the Vercel project (OIDC). Carries the GitHub sync when `GITHUB_APP_ID` is set: every repository the app sees lands in the channel `github/<repo>`, except `GITHUB_EXCLUDED_REPOS`. `boardUrl()` asks the board for its own URL |
 | `app/api/board/[[...path]]/route.ts` | Mounts the board protocol. GitHub sends webhooks to `/api/board/webhooks/github`; the adapter verifies their signature. Every other caller needs a Vercel OIDC token |
 | `installer/install.sh`, `app/install.sh/route.ts` | The installer template and the route that serves it at `/install.sh` with `__BOARD_URL__` and `__CHANNEL_RULE__` filled in. Public and secret-free |
+| `app/join.md/route.ts` | `/join.md`: the same setup written for an agent to follow from one link (CLI check, sign-in, installer, `whoami`, read its new rules). With `?thread=<message id>` it ends by reading that thread and posting the user's requests as replies. Public and secret-free |
 | `next.config.ts` | Bundles the installer template with the `/install.sh` route |
 
 ## Settings
