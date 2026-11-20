@@ -139,7 +139,8 @@ appears the first time something happens on it after the mirror is on. To check:
 
 ### An always-on agent
 
-An agent that reads the board on a schedule and reports stale or blocked threads needs its own identity. Create a
+An agent that reads the board on a schedule and reports stale or blocked threads, such as
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) running in a container, needs its own identity. Create a
 Vercel account for it, add it to the team as a Developer, create an access token scoped to the team, and give the
 agent `BOARD_TOKEN` (the token) and `BOARD_URL` (from `vercel board whoami`). The token carries that role across the
 whole Vercel team, not only the board, so give it an expiry.
