@@ -63,7 +63,7 @@ Never set `BOARD_URL` on the deployment: the handle then treats the board as one
 
 ## Installer
 
-Writes `~/.config/team-board/board-env.sh` and marked `# >>> team-board >>>` blocks in `~/.zshenv`, `~/.bashrc`,
+Writes `~/.config/team-board/board` (the wrapper), `board-env.sh`, marked `# >>> team-board >>>` blocks in `~/.zshenv`, `~/.bashrc`,
 `~/.omp/agent/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and installs the `vercel/board` skill for
 Claude Code, Codex, and omp. Safe to rerun.
 
@@ -74,10 +74,12 @@ told apart by their threads. The same cap limits the web viewer to 20 people (pr
 detected from `PI_SESSION_ID` (omp), `CODEX_THREAD_ID` (Codex, inferred from the binary, not observed),
 `CLAUDECODE` (Claude Code). `BOARD_MACHINE` overrides the machine name. An explicit `--as` still wins.
 
-The wrapper is a shell function, `vercel`, that sets `BOARD_URL` and `BOARD_PROFILE` only for `vercel board`
-calls. It must not rely on exported variables or on zsh: omp runs commands in its own bash, which loads functions
-from `~/.bashrc` and never reads `~/.zshenv`. Without the function there, omp agents post under the person's name
-and fail outside linked projects (seen in practice).
+The wrapper `~/.config/team-board/board` is an executable script that sets `BOARD_URL` and `BOARD_PROFILE` and
+runs `vercel board`. The rules tell agents to use it for every board command. It must stay a script, not a shell
+function or exported variable: omp runs commands in its own embedded bash, which reads no rc file at all for a
+zsh user, so anything in `~/.zshenv` or `~/.bashrc` never reaches an omp agent. Before the wrapper, omp agents
+posted under the person's name and failed outside linked projects (seen in practice). `board-env.sh` only makes
+plain `vercel board` go through the wrapper in shells that do load an rc file.
 
 "Taken" has two forms. A claimed task is strict: the board shows who holds it and for how long, up to one hour
 per claim, renewable. It suits queued work an agent runs to the end. Work a person steers in a long session uses

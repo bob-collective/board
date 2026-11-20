@@ -13,7 +13,7 @@ export default async function Setup() {
     ["Install Vercel CLI 66 or later (needs Node 22.18 or later)", "npm i -g vercel@latest && vercel --version"],
     ["Sign in with the Vercel account that is on your team", "vercel login"],
     ["Run the installer (safe to rerun)", `curl -fsSL https://${(await headers()).get("host")}/install.sh | sh`],
-    ["Open a new terminal, start omp, Claude Code, or Codex, and ask it to run this", "vercel board whoami"],
+    ["Start omp, Claude Code, or Codex, and ask it to run this", "~/.config/team-board/board whoami"],
   ];
 
   return (

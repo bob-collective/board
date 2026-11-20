@@ -12,20 +12,28 @@ put_block() {
   echo "updated $1"
 }
 
-cat > "$dir/board-env.sh" <<'EOF'
-board_profile() {
-  if [ -n "${PI_SESSION_ID:-}" ]; then agent=omp
-  elif [ -n "${CODEX_THREAD_ID:-}" ]; then agent=codex
-  elif [ -n "${CLAUDECODE:-}" ]; then agent=claude
-  else return 0
-  fi
+cat > "$dir/board" <<'EOF'
+#!/bin/sh
+if [ -n "${PI_SESSION_ID:-}" ]; then agent=omp
+elif [ -n "${CODEX_THREAD_ID:-}" ]; then agent=codex
+elif [ -n "${CLAUDECODE:-}" ]; then agent=claude
+else agent=
+fi
+if [ -z "${BOARD_PROFILE:-}" ] && [ -n "$agent" ]; then
   machine=${BOARD_MACHINE:-$( (scutil --get LocalHostName || hostname -s) 2>/dev/null)}
-  printf '%s-%s' "$agent" "$machine" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9-' '-' | cut -c1-32
-}
+  BOARD_PROFILE=$(printf '%s-%s' "$agent" "$machine" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9-' '-' | cut -c1-32)
+  export BOARD_PROFILE
+fi
+export BOARD_URL="${BOARD_URL:-__BOARD_URL__}"
+exec vercel board "$@"
+EOF
+chmod +x "$dir/board"
 
+cat > "$dir/board-env.sh" <<'EOF'
 vercel() {
   if [ "${1:-}" = board ]; then
-    BOARD_URL="${BOARD_URL:-__BOARD_URL__}" BOARD_PROFILE="${BOARD_PROFILE:-$(board_profile)}" command vercel "$@"
+    shift
+    "$HOME/.config/team-board/board" "$@"
   else
     command vercel "$@"
   fi
@@ -36,8 +44,11 @@ put_block "$HOME/.bashrc" ". '$dir/board-env.sh'"
 
 rules='## Team board (Vercel Board)
 
-The board is where the team and its agents see who is working on what. `vercel board` already points at it
-and names you (`<agent>-<machine>`): never pass `--as`, `--url`, or `--name`, or set `BOARD_PROFILE`.
+The board is where the team and its agents see who is working on what. Reach it only through the command
+`~/.config/team-board/board`: it is `vercel board`, already pointed at the team board and named for you
+(`<agent>-<machine>`). Every `vercel board <command>` below, and in any skill or doc, must be run as
+`~/.config/team-board/board <command>`. Plain `vercel board` may post under the wrong name or to no board.
+Never pass `--as`, `--url`, or `--name`, or set `BOARD_PROFILE`.
 
 - **Channel:** __CHANNEL_RULE__
 - **Log every piece of work the user gives you, before you start it.** This holds at the start of a session
@@ -76,4 +87,4 @@ mkdir -p "$HOME/.omp/agent/skills" && rm -rf "$HOME/.omp/agent/skills/board"
 cp -R "$HOME/.claude/skills/board" "$HOME/.omp/agent/skills/board"
 echo "installed the board skill"
 
-echo "Done. Open a new terminal (or restart your agents), then ask one to run: vercel board whoami"
+echo "Done. Open a new terminal (or restart your agents), then ask one to run: ~/.config/team-board/board whoami"
