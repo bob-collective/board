@@ -53,10 +53,12 @@ state="$dir/tasks/$session"
 if [ "${1:-}" != --run ]; then
   action=${1:-}
   if [ "$action" = remind ]; then
+    [ -e "$dir/stale" ] && echo "The team board rules on this machine are out of date. Update them before anything else: curl -fsSL __ORIGIN__/install.sh | sh, then read the Team board section of your instructions again."
+    only="Team board (ignore this line for anything else). Log only __WORK_SCOPE__ that teammates could pick up or need to know about. Never log anything personal, about people or pay, company finances, legal matters, security problems, secrets or access, or anything meant for only part of the team. If unsure, do not log"
     if [ -s "$state" ]; then
-      echo "Team board, only for __WORK_SCOPE__, never for anything personal, about people, legal, financial or a security incident; if unsure, do not log (ignore this line for anything else): this session's logged task is \"$(sed -n 2p "$state")\". If this message is a different piece of that work, log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\". When the work is finished: ~/.config/team-board/log done \"<result>\". Subagents never log."
+      echo "$only. This session's logged task is \"$(sed -n 2p "$state")\". If this message is a different piece of that work, log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\". When the work is finished: ~/.config/team-board/log done \"<result>\". Subagents never log."
     else
-      echo "Team board, only for __WORK_SCOPE__, never for anything personal, about people, legal, financial or a security incident; if unsure, do not log (ignore this line for anything else): no task is logged for this session. If this message gives you a piece of that work (it changes code, files or systems, or takes more than a few minutes), log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\", a short neutral line, never the user's own words. It returns at once. Not for questions or quick lookups. Subagents never log."
+      echo "$only. No task is logged for this session. If this message gives you a piece of that work (it changes code, files or systems, or takes more than a few minutes), log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\", a short neutral line, never the user's own words. It returns at once. Not for questions or quick lookups. Subagents never log."
     fi
     set -- touch
   fi
@@ -69,6 +71,14 @@ if [ "${1:-}" != --run ]; then
 fi
 
 shift
+if [ -z "$(find "$dir/checked" -mtime -1 2>/dev/null)" ]; then
+  touch "$dir/checked"
+  latest=$(curl -fsS --max-time 10 "__ORIGIN__/install.sh?version" 2>/dev/null)
+  case "$latest" in
+    "" | *[!a-f0-9]*) ;;
+    *) [ "$latest" != "$(cat "$dir/version" 2>/dev/null)" ] && touch "$dir/stale" ;;
+  esac
+fi
 tries=0
 while ! mkdir "$state.lock" 2>/dev/null && [ "$tries" -lt 60 ]; do sleep 1; tries=$((tries + 1)); done
 trap 'rmdir "$state.lock" 2>/dev/null' EXIT
@@ -135,12 +145,21 @@ The board is where the team and its agents see who is working on what. Reach it 
 `~/.config/team-board/board <command>`. Plain `vercel board` may post under the wrong name or to no board.
 Never pass `--as`, `--url`, or `--name`, or set `BOARD_PROFILE`.
 
-- **Only __WORK_SCOPE__ belongs on the board.** Decide that first, from what the task is about, not from the
-  folder you are in. Never put anything personal or about people on it (hiring, performance, pay), nor legal,
-  finance, or security incidents. For anything outside that, do not log, post, or read the board, and ignore the
-  board reminder. If you are unsure, do not log.
-- **Write short neutral lines.** A task title is what, repo, branch. Never the user'"'"'s own words, in a title
-  or an update.
+- **Only __WORK_SCOPE__ belongs on the board, and only what teammates could pick up or need to know about.**
+  Decide that first, from what the task is about, not from the folder you are in.
+- **Never put these on the board,** in a task, an update, or a result:
+  - anything personal;
+  - people matters: hiring, performance, pay and salaries, contracts, someone joining or leaving;
+  - company finances: runway, fundraising, investors, budgets, bank and tax matters;
+  - legal matters;
+  - security incidents and vulnerabilities that are not yet fixed, and secrets, keys, or who has access to what;
+  - anything meant for only part of the team. If you learned it from, or are doing it for, only some people
+    (founders, leadership, a private chat, a restricted document, repository or server), it stays off the board,
+    even when it concerns the team'"'"'s products.
+  Ask yourself: may everyone in the company read this line? If not, or if you are unsure, do not log, post, or
+  read the board for it, and ignore the board reminder.
+- **Write short neutral lines.** A task title is what, repo, branch. Never the user'"'"'s own words, in a title,
+  an update, or a result. What you write stays: a result cannot be removed from the board later.
 - **Channel:** __CHANNEL_RULE__
 - **Log every piece of that work the user gives you, in the same step as your first action on it.** This holds at
   the start of a session and every time the user hands you something new later in the conversation. A piece of
@@ -171,6 +190,9 @@ Never pass `--as`, `--url`, or `--name`, or set `BOARD_PROFILE`.
 put_block "$HOME/.omp/agent/AGENTS.md" "$rules"
 put_block "$HOME/.claude/CLAUDE.md" "$rules"
 put_block "$HOME/.codex/AGENTS.md" "$rules"
+
+printf '%s\n' '__VERSION__' > "$dir/version"
+rm -f "$dir/stale"
 
 npx -y skills add vercel/board --skill board -g -a claude-code codex -y --copy </dev/null >/dev/null
 mkdir -p "$HOME/.omp/agent/skills" && rm -rf "$HOME/.omp/agent/skills/board"

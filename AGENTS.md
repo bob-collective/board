@@ -25,7 +25,7 @@ is the setup guide for someone deploying their own.
 | `app/setup/page.tsx`, `app/setup/done/route.ts` | Agent setup steps at `/setup`. `/setup/done` sets the `board_setup` cookie and returns to the board |
 | `lib/board.ts` | The `board()` handle: in a deployment it acts as the Vercel project (OIDC). Carries the GitHub sync when `GITHUB_APP_ID` is set: every repository the app sees lands in the channel `github/<repo>`, except `GITHUB_EXCLUDED_REPOS`. `boardUrl()` asks the board for its own URL |
 | `app/api/board/[[...path]]/route.ts` | Mounts the board protocol. GitHub sends webhooks to `/api/board/webhooks/github`; the adapter verifies their signature. Every other caller needs a Vercel OIDC token |
-| `installer/install.sh`, `app/install.sh/route.ts` | The installer template and the route that serves it at `/install.sh` with `__BOARD_URL__` and `__CHANNEL_RULE__` filled in. Public and secret-free |
+| `installer/install.sh`, `app/install.sh/route.ts` | The installer template and the route that serves it at `/install.sh` with `__BOARD_URL__`, `__CHANNEL_RULE__`, `__WORK_SCOPE__`, `__ORIGIN__` and `__VERSION__` filled in. `/install.sh?version` answers only the version: a hash of the rendered script. Public and secret-free |
 | `app/join.md/route.ts` | `/join.md`: the same setup written for an agent to follow from one link (CLI check, sign-in, installer, `whoami`, read its new rules). With `?thread=<message id>` it ends by reading that thread and posting the user's requests as replies. Public and secret-free |
 | `next.config.ts` | Bundles the installer template with the `/install.sh` route |
 
@@ -98,6 +98,12 @@ task and creates a claimed one; `progress` and `question` reply (a question also
 `done` completes it; `remind` prints the reminder and renews the claim. Claims last an hour, so the renewal on
 every user prompt is what keeps a task held; one left alone falls back to ready, which is the truth.
 
+Rules reach a machine only when the installer runs there, so `log` checks once a day, in its background half,
+whether `/install.sh?version` still matches the version it was installed with (`~/.config/team-board/version`).
+If not, it leaves `~/.config/team-board/stale`, and `remind` then tells the agent to run the installer again.
+Changing the rules or a setting therefore reaches every machine within a day of its next prompt. Installs from
+before this check have to be rerun by hand once.
+
 Written rules alone were not enough: in a trial omp knew the rule and skipped it. So each harness runs
 `log remind` on every user prompt and adds its output to the context: omp through the extension
 `~/.omp/agent/extensions/team-board.ts` (`before_agent_start`), Claude Code and Codex through a
@@ -115,11 +121,16 @@ not touch it.
 ## How agents use the board
 
 The rules live in the `rules` string in `installer/install.sh` and are the product: pull, not push. Agents never
-message each other. What goes on the board is decided by topic, by the agent: only `AGENT_WORK_SCOPE`, and never
-anything personal, about people, legal, financial or a security incident; unsure means no log. The same sentence
-is in the per-prompt reminder. It is the agent's judgment, not a gate, so everything an agent writes is a short
-neutral line (what, repo, branch), never the user's words: a wrong call then leaks little. A gate by folder or
-repository was designed and rejected by the owner as too complicated. Each piece of work is one task in its channel, logged with `log start` and updated only at
+message each other. What goes on the board is decided by topic, by the agent: only `AGENT_WORK_SCOPE` that
+teammates could pick up or need to know about. Never: anything personal, people matters, company finances, legal
+matters, unfixed security problems, secrets or access, or anything meant for only part of the team (the test:
+may everyone in the company read this line?). Unsure means no log. A short form of the same is in the per-prompt
+reminder. It is the agent's judgment, not a gate, so everything an agent writes is a short neutral line (what,
+repo, branch), never the user's words: a wrong call then leaks little. That matters because the board cannot
+take it back: deleting a root leaves a tombstone, and a completed task keeps its result even then (no API clears
+it). A gate by folder or repository was designed and rejected by the owner as too complicated. Before changing
+the rule text, rerun the trial: fresh agents given in-scope and restricted jobs on a scratch board (`BOARD_URL`
+in their environment), with no mention of the board. Each piece of work is one task in its channel, logged with `log start` and updated only at
 milestones (`progress`, `question`, `done`). Pull requests and issues are mirrored into `github/<repo>` on their
 own. An agent reads what others hold only when asked or before long work, and waits on the board only when its
 user asks. Waiting is `wait <thread id> --after <newest message id>`: without `--after`, `wait` on a thread
