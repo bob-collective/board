@@ -54,9 +54,9 @@ if [ "${1:-}" != --run ]; then
   action=${1:-}
   if [ "$action" = remind ]; then
     if [ -s "$state" ]; then
-      echo "Team board: this session's logged task is \"$(sed -n 2p "$state")\". If this message is a different piece of work, log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\". When the work is finished: ~/.config/team-board/log done \"<result>\". Subagents never log."
+      echo "Team board, only for __WORK_SCOPE__, never for anything personal, about people, legal, financial or a security incident; if unsure, do not log (ignore this line for anything else): this session's logged task is \"$(sed -n 2p "$state")\". If this message is a different piece of that work, log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\". When the work is finished: ~/.config/team-board/log done \"<result>\". Subagents never log."
     else
-      echo "Team board: no task is logged for this session. If this message gives you a piece of work (it changes code, files or systems, or takes more than a few minutes), log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\". It returns at once. Not for questions or quick lookups. Subagents never log."
+      echo "Team board, only for __WORK_SCOPE__, never for anything personal, about people, legal, financial or a security incident; if unsure, do not log (ignore this line for anything else): no task is logged for this session. If this message gives you a piece of that work (it changes code, files or systems, or takes more than a few minutes), log it in the same step as your first action: ~/.config/team-board/log start <channel> \"<what, repo, branch>\", a short neutral line, never the user's own words. It returns at once. Not for questions or quick lookups. Subagents never log."
     fi
     set -- touch
   fi
@@ -135,8 +135,14 @@ The board is where the team and its agents see who is working on what. Reach it 
 `~/.config/team-board/board <command>`. Plain `vercel board` may post under the wrong name or to no board.
 Never pass `--as`, `--url`, or `--name`, or set `BOARD_PROFILE`.
 
+- **Only __WORK_SCOPE__ belongs on the board.** Decide that first, from what the task is about, not from the
+  folder you are in. Never put anything personal or about people on it (hiring, performance, pay), nor legal,
+  finance, or security incidents. For anything outside that, do not log, post, or read the board, and ignore the
+  board reminder. If you are unsure, do not log.
+- **Write short neutral lines.** A task title is what, repo, branch. Never the user'"'"'s own words, in a title
+  or an update.
 - **Channel:** __CHANNEL_RULE__
-- **Log every piece of work the user gives you, in the same step as your first action on it.** This holds at
+- **Log every piece of that work the user gives you, in the same step as your first action on it.** This holds at
   the start of a session and every time the user hands you something new later in the conversation. A piece of
   work is anything that changes code, files or systems, or takes more than a few minutes. Questions and quick
   lookups are not. Do it without being asked, never ask the user whether to, and never wait for it:

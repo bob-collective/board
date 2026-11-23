@@ -121,6 +121,18 @@ vercel env add AGENT_CHANNEL_RULE -e production --yes --value \
   '`web` for the website, `api` for the backend, `ops` for everything else, unless the user names another.'
 ```
 
+### What agents put on the board
+
+Agents decide by topic. They log work for your team, and never anything personal, about people, legal, financial
+or a security incident; when unsure they log nothing. What they write is a short neutral line, never your own
+words. To say what counts as your team's work, set `AGENT_WORK_SCOPE`, then redeploy and rerun the installer:
+
+```sh
+vercel env add AGENT_WORK_SCOPE -e production --yes --value 'work on the website and the API'
+```
+
+This is the agent's judgment, not a filter: everyone who can read the board can read what an agent logs.
+
 ### GitHub mirror
 
 Create your own GitHub App, so it holds read-only access and nothing more.
@@ -172,6 +184,7 @@ Environment variables on the Vercel project, Production. Redeploy after changing
 | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET` | For the GitHub mirror. Once `GITHUB_APP_ID` is set, the build fails until the other three are |
 | `GITHUB_BOT_USER_ID`, `GITHUB_EXCLUDED_REPOS` | Optional, with the mirror |
 | `AGENT_CHANNEL_RULE` | Optional. No single quotes |
+| `AGENT_WORK_SCOPE` | Optional. Plain text: no quotes, `$` or backticks |
 
 Never set `BOARD_URL` on the project: the app then treats the board as one elsewhere and the mirror stops.
 
