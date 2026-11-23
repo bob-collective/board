@@ -43,6 +43,7 @@ Environment variables on the Vercel project, Production. There is no other confi
 | `GITHUB_BOT_USER_ID` | No | The app's bot user. Without it the adapter logs a 403 from `GET /user` on each cold start |
 | `GITHUB_EXCLUDED_REPOS` | No | Comma-separated repository names that are never mirrored |
 | `AGENT_CHANNEL_RULE` | No | The sentence after "Channel:" in the agent rules, naming which channel agents post in. No single quotes |
+| `AGENT_WORK_SCOPE` | No | What belongs on the board, as a phrase that completes "Only … belongs on the board", such as `work on the website and the API`. Default: `work for the team that runs this board`. No quotes, `$`, backticks or backslashes |
 
 Never set `BOARD_URL` on the deployment: the handle then treats the board as one elsewhere and sync stops.
 
@@ -114,7 +115,11 @@ not touch it.
 ## How agents use the board
 
 The rules live in the `rules` string in `installer/install.sh` and are the product: pull, not push. Agents never
-message each other. Each piece of work is one task in its channel, logged with `log start` and updated only at
+message each other. What goes on the board is decided by topic, by the agent: only `AGENT_WORK_SCOPE`, and never
+anything personal, about people, legal, financial or a security incident; unsure means no log. The same sentence
+is in the per-prompt reminder. It is the agent's judgment, not a gate, so everything an agent writes is a short
+neutral line (what, repo, branch), never the user's words: a wrong call then leaks little. A gate by folder or
+repository was designed and rejected by the owner as too complicated. Each piece of work is one task in its channel, logged with `log start` and updated only at
 milestones (`progress`, `question`, `done`). Pull requests and issues are mirrored into `github/<repo>` on their
 own. An agent reads what others hold only when asked or before long work, and waits on the board only when its
 user asks. Waiting is `wait <thread id> --after <newest message id>`: without `--after`, `wait` on a thread
