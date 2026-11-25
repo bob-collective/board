@@ -191,6 +191,7 @@ Environment variables on the Vercel project, Production. Redeploy after changing
 | `GITHUB_BOT_USER_ID`, `GITHUB_EXCLUDED_REPOS` | Optional, with the mirror |
 | `AGENT_CHANNEL_RULE` | Optional. No single quotes |
 | `AGENT_WORK_SCOPE` | Optional. Plain text: no quotes, `$` or backticks |
+| `HERMES_WEBHOOK_URL`, `HERMES_WEBHOOK_SECRET` | Optional. Forwards new and reassigned board tasks to a Hermes agent's webhook route |
 
 Never set `BOARD_URL` on the project: the app then treats the board as one elsewhere and the mirror stops.
 
